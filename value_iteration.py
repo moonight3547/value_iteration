@@ -1,3 +1,4 @@
+import random
 import time
 import numpy as np
 from matplotlib import pyplot as plt
@@ -185,3 +186,103 @@ class CyclicValueIterationAgent(ValueIterationAgent):
                 print("Converged in %d Iterations"%(i))
                 return self.value
         print("\033[31m[Warning]\033[0m Iterated over %d Iterations and couldn't converge"%(self.iters))
+
+class PolicyIterationAgent(ValueIterationAgent):
+    def __init__(self, env, gamma=1, iters=10000, eval_iters=100, eps=1e-20, seed=3547):
+        super().__init__(env, gamma, iters, eval_iters, eps, seed)
+    
+    def value_iteration(self):
+        self.value = np.zeros(self.num_states)
+        # Start Iteration
+        for i in range(self.iters):
+            prev_value = self.value.copy()
+            for state in range(self.num_states):
+                action = self.policy[state]
+                outcomes = []
+                for prob, next_state, reward, done in self.env.P[state][action]:
+                    outcomes.append(prob * (reward + self.gamma * prev_value[next_state]))
+                self.value[state] = np.sum(outcomes)
+            self.num_iters += 1
+            if (np.sum(np.fabs(prev_value - self.value)) <= self.eps):
+                return self.value
+        
+    def policy_iteration(self):
+        self.num_iters = 0
+        self.policy = np.zeros(self.num_states, dtype=int)
+        for _ in range(self.iters):
+            self.value_iteration()
+            prev_Q = self.Q.copy()
+            prev_policy = self.policy.copy()
+            for state in range(self.num_states):
+                Q = []
+                for action in range(self.num_actions):
+                    outcomes = []
+                    for prob, next_state, reward, done in self.env.P[state][action]:
+                        outcomes.append(prob * (reward + self.gamma * self.value[next_state]))
+                    Q.append(np.sum(outcomes))
+                self.Q[state] = Q
+                self.policy[state] = np.argmax(Q)
+#            print(self.policy, prev_policy)
+            if np.array_equal(self.policy, prev_policy): #(np.sum(np.fabs(prev_Q - self.Q)) <= self.eps * self.num_actions):
+                print(f"Converged after {self.num_iters} value iterations and {_+1} policy iterations")
+                return self.value
+        
+    def run(self):
+        startTime = time.time()
+        self.policy_iteration()
+        endTime = time.time()
+        self.time_cost = endTime - startTime
+        self.eval_policy()
+
+class QLearningAgent(ValueIterationAgent):
+    def __init__(self, env, gamma=1, iters=10000, eval_iters=100, eps=1e-20, seed=3547, lr=0.8):
+        super().__init__(env, gamma, iters, eval_iters, eps, seed)
+        self.lr = lr
+        random.seed(seed)
+ 
+    def q_learning(self):
+        # Initialize Q table
+        self.Q = np.zeros([self.num_states, self.num_actions])
+        num_episodes = self.iters
+        #create lists to contain total rewards and steps per episode
+        rewards = []
+        for i in range(num_episodes):
+        #Reset environment and get first new observation
+            s = self.env.reset()[0]
+            #Total reward in one episode
+            tot_reward = 0
+            for _ in range(self.iters):
+                # Choose an action by greedily (with noise) picking from Q table with given s
+                noise_scale = max(1 / (i + 1), 0.002)
+                action_evaluation = self.Q[s] + np.random.randn(1, self.num_actions) * noise_scale
+                action = np.argmax(action_evaluation)
+                # Get new state s1, reward and done from environment
+                s1, reward, terminated, truncated, _ = self.env.step(action)
+                done = terminated or truncated
+                # Update Q-Table with new knowledge
+                self.Q[s, action] = (1 - self.lr) * self.Q[s, action] + self.lr * (reward + self.gamma * np.max(self.Q[s1]))
+                # Cumulate the total reward
+                tot_reward += reward
+                # Update s
+                s = s1
+                if done == True:
+                    break
+            rewards.append(tot_reward)
+        #print(self.Q)
+        print("Score over time: " +  str(sum(rewards)/num_episodes))
+        
+    def get_policy(self):
+        self.value = np.zeros(self.num_states)
+        self.policy = np.zeros(self.num_states, dtype=int)
+        for state in range(self.num_states):
+            self.value[state] = np.max(self.Q[state])
+#            print(self.value[state], self.Q[state])
+            self.policy[state] = np.argmax(self.Q[state])
+
+    def run(self):
+        startTime = time.time()
+        self.q_learning()
+        self.get_policy()
+        endTime = time.time()
+        self.time_cost = endTime - startTime
+        self.eval_policy()
