@@ -22,19 +22,22 @@ The directory tree is shown below:
 ```
 .
 ├── README.md
-├── grid_world_env.py
-├── project_description.pdf
-├── project_report.pdf
+├── docs
+│   ├── project_description.pdf
+│   └── project_report.pdf
+├── envs
+│   ├── grid_world_env.py
+│   ├── tictactoe
+│   │   ├── tictactoe_2p_env.py
+│   │   ├── tictactoe_gui.py
+│   │   └── tictactoe_gui_env.py
+│   ├── tictactoe_env.py
+│   └── zero_sum_env.py
 ├── random_value_iteration.png
 ├── random_value_iteration_time.png
-├── tictactoe_2p_env.py
-├── tictactoe_env.py
-├── tictactoe_gui.py
-├── tictactoe_gui_env.py
 ├── two_agents.ipynb
 ├── value_iteration.ipynb
-├── value_iteration.py
-└── zero_sum_env.py
+└── value_iteration.py
 ```
 
 

@@ -1,10 +1,14 @@
+import sys
+sys.path.append("../../")
+
 import gym
 from gym import spaces
 import numpy as np
 from collections import defaultdict
 from itertools import product
-from tictactoe_gui import *
+from envs.tictactoe.tictactoe_gui import *
 from value_iteration import *
+
 # X:1; O:2
 class TicTacToeGUIEnv(gym.Env):
     metadata = {'render.modes': ['human']}

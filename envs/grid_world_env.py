@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+
 import gym
 from gym import spaces
 import pygame
